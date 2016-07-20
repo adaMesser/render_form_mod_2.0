@@ -1,0 +1,4 @@
+name = Render form module
+description = Module with form (render array)
+core = 7.x
+package = EDU

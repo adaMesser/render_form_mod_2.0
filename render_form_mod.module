@@ -1,0 +1,213 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ *
+ * @param $existing
+ * @param $type
+ * @param $theme
+ * @param $path
+ * @return array
+ */
+function render_form_mod_theme($existing, $type, $theme, $path) {
+  $items = array();
+
+  $items['rend_content'] = array(
+    'render element' => 'form',
+    'path' => drupal_get_path('module', 'render_form_mod') . '/templates',
+    'template' => 'render-form-mod-content',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_block_info().
+ *
+ * @return mixed
+ */
+function render_form_mod_block_info() {
+  $blocks['render_form_mod'] = array(
+    'info' => t('Rend FORM'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * @param string $delta
+ * @return array
+ */
+function render_form_mod_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'render_form_mod':
+      $block['subject'] = 'Rend Form';
+      $block['content'] = drupal_get_form('render_form_mod_form');
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * @param $variables
+ */
+function render_form_mod_preprocess_rend_content(&$variables) {
+  if (!empty($variables['rend_form']['#attributes']['class'])) {
+    $variables['classes_array'] = array_merge($variables['classes_array'], $variables['rend_form']['#attributes']['class']);
+  }
+
+  if (!empty($variables['rend_form']['#attributes']['id'])) {
+    $variables['attributes_array']['id'] = $variables['rend_form']['#attributes']['id'];
+  }
+}
+
+/**
+ * Implements hook_form().
+ *
+ * @param $node
+ * @param $form_state
+ * @return array
+ */
+function render_form_mod_form($node, &$form_state) {
+  $form = array();
+  $form['carinfo'] = array(
+    '#title' => t('Car Info'),
+    '#description' => t('Add some info about the car'),
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#tree' => TRUE,
+    '#attributes' => array(
+      'class' => array(
+        'container-wrapper',
+        'container-wrapper-class-2',
+      ),
+    ),
+
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'render_form_mod') . '/css/styles.css',
+      ),
+      'js' => array(
+        drupal_get_path('module', 'render_form_mod') . '/js/script-1.js',
+        drupal_get_path('module', 'render_form_mod') . '/js/script-2.js',
+      ),
+    ),
+    '#theme' => 'rend_content',
+  );
+
+  $form['carinfo']['render_form_mod_brand'] = array(
+    '#title' => t('Car Brand'),
+    '#type' => 'textfield',
+    '#description' => t('Enter car brand'),
+    '#default_value' => '',
+    '#maxlength' => 255,
+    '#size' => 16,
+    '#attributes' => array(
+      'placeholder' => t('Plymouth'),
+      'class' => array(
+        'test-class',
+        'test-class-2',
+      ),
+    ),
+    '#weight' => 0,
+    '#required' => TRUE,
+  );
+
+  $form['carinfo']['render_form_mod_bargain'] = array(
+    '#title' => t('It is possible to bargain'),
+    '#type' => 'checkbox',
+    '#weight' => 1,
+    '#default_value' => variable_get('render_form_mod_bargain', 0),
+  );
+
+  $form['carinfo']['render_form_mod_country'] = array(
+    '#type' => 'select',
+    '#title' => t('Select country'),
+    '#options' => array(
+      'USA' => 'USA',
+      'German' => 'German',
+      'Japan' => 'Japan',
+    ),
+    '#description' => t('Choose a country.'),
+  );
+
+  $form['carinfo']['render_form_mod_car_fuel'] = array(
+    '#type' => 'radios',
+    '#title' => t('Fuel type'),
+    '#description' => t('When a poll is closed, visitors can no longer vote for it.'),
+    '#default_value' => 0,
+    '#options' =>  array(
+      'gasoline' => t('gasoline'),
+      'diesel' => t('diesel'),
+      'gas' => t('gas'),
+      'electricity' => t('electricity'),
+    ),
+  );
+
+  $form['carinfo']['render_form_mod_car_description'] = array(
+    '#title' => t('Description'),
+    '#type' => 'textarea',
+    '#description' => t('Add some description'),
+    '#default_value' => '',
+
+    '#attributes' => array(
+      'placeholder' => t('Plymouth Barracuda'),
+      'class' => array(
+        'test-class',
+        'test-class-2',
+      ),
+    ),
+    '#weight' => 5,
+    '#required' => TRUE,
+  );
+
+  $form['#attached']['css'] = array(
+    drupal_get_path('module', 'render_form_mod') . '/css/styles.css',
+  );
+
+  $form['#attached']['js'] = array(
+    drupal_get_path('module', 'render_form_mod') . '/js/script-1.js',
+    drupal_get_path('module', 'render_form_mod') . '/js/script-2.js'
+  ,
+  );
+
+  $form['actions'] = array(
+    '#type' => 'actions',
+  );
+
+  $form['actions']['render_form_mod_car_submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send'),
+  );
+
+  return $form;
+}
+
+/**
+ * @param $form
+ * @param $form_state
+ */
+function render_form_mod_form_submit($form, &$form_state) {
+  $values = $form_state['values']['carinfo'];
+
+  $is_bargain_possible = $values['render_form_mod_bargain'] ? ": it is possible to bargain. " : ": it isn't possible to bargain";
+  $message_type = $values['render_form_mod_bargain'] ? 'status' : 'warning';
+  $from_country = ' from ' . $values['render_form_mod_country'];
+  $fuel_type = ' with the ' . $values['render_form_mod_car_fuel'] . ' fuel type';
+  $description = $values['render_form_mod_car_description'];
+  $message = t('@name @country @fuel @is_bargain_possible @description', array(
+      '@name' => $values['render_form_mod_brand'],
+      '@is_bargain_possible' => $is_bargain_possible,
+      '@country' => $from_country,
+      '@fuel' => $fuel_type,
+      '@description' => $description)
+  );
+
+  drupal_set_message($message, $message_type);
+}
