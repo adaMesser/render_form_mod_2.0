@@ -1,4 +1,4 @@
 name = Render form module
-description = Module with form (render array)
+description = the module with the form using render arrays
 core = 7.x
 package = EDU
