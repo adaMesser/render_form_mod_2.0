@@ -57,13 +57,8 @@ function render_form_mod_block_view($delta = '') {
  * @param $variables
  */
 function render_form_mod_preprocess_rend_content(&$variables) {
-  if (!empty($variables['rend_form']['#attributes']['class'])) {
-    $variables['classes_array'] = array_merge($variables['classes_array'], $variables['rend_form']['#attributes']['class']);
-  }
-
-  if (!empty($variables['rend_form']['#attributes']['id'])) {
-    $variables['attributes_array']['id'] = $variables['rend_form']['#attributes']['id'];
-  }
+  $variables['form']['render_form_mod_car_fuel']['#weight'] = 10;
+  $variables['form']['render_form_mod_brand']['#weight'] = 11;
 }
 
 /**
@@ -105,62 +100,77 @@ function render_form_mod_form($node, &$form_state) {
     '#title' => t('Car Brand'),
     '#type' => 'textfield',
     '#description' => t('Enter car brand'),
-    '#default_value' => '',
+    '#default_value' => 'Plymouth',
     '#maxlength' => 255,
     '#size' => 16,
     '#attributes' => array(
       'placeholder' => t('Plymouth'),
       'class' => array(
-        'test-class',
-        'test-class-2',
+        'brand-class',
       ),
     ),
-    '#weight' => 0,
+    '#weight' => 1,
     '#required' => TRUE,
   );
 
   $form['carinfo']['render_form_mod_bargain'] = array(
     '#title' => t('It is possible to bargain'),
     '#type' => 'checkbox',
-    '#weight' => 1,
+    '#weight' => 3,
     '#default_value' => variable_get('render_form_mod_bargain', 0),
+    '#attributes' => array(
+      'class' => array(
+        'bargain-class',
+      ),
+    ),
   );
 
   $form['carinfo']['render_form_mod_country'] = array(
     '#type' => 'select',
     '#title' => t('Select country'),
+    '#default_value' => 'usa',
     '#options' => array(
-      'USA' => 'USA',
-      'German' => 'German',
-      'Japan' => 'Japan',
+      'usa' => 'USA',
+      'german' => 'German',
+      'japan' => 'Japan',
     ),
     '#description' => t('Choose a country.'),
+    '#attributes' => array(
+      'class' => array(
+        'country-class',
+      ),
+    ),
+    '#weight' => 2,
   );
 
   $form['carinfo']['render_form_mod_car_fuel'] = array(
     '#type' => 'radios',
     '#title' => t('Fuel type'),
     '#description' => t('When a poll is closed, visitors can no longer vote for it.'),
-    '#default_value' => 0,
+    '#default_value' => 'gasoline',
     '#options' =>  array(
       'gasoline' => t('gasoline'),
       'diesel' => t('diesel'),
       'gas' => t('gas'),
       'electricity' => t('electricity'),
     ),
+    '#attributes' => array(
+      'class' => array(
+        'fuel-class',
+      ),
+    ),
+    '#weight' => 4,
   );
 
   $form['carinfo']['render_form_mod_car_description'] = array(
     '#title' => t('Description'),
     '#type' => 'textarea',
     '#description' => t('Add some description'),
-    '#default_value' => '',
-
+    '#default_value' => 'The Plymouth Barracuda is a two-door car that was manufactured by Plymouth from the 1964 to 1974 model years.',
     '#attributes' => array(
       'placeholder' => t('Plymouth Barracuda'),
       'class' => array(
-        'test-class',
-        'test-class-2',
+        'description-class',
       ),
     ),
     '#weight' => 5,
@@ -173,8 +183,7 @@ function render_form_mod_form($node, &$form_state) {
 
   $form['#attached']['js'] = array(
     drupal_get_path('module', 'render_form_mod') . '/js/script-1.js',
-    drupal_get_path('module', 'render_form_mod') . '/js/script-2.js'
-  ,
+    drupal_get_path('module', 'render_form_mod') . '/js/script-2.js',
   );
 
   $form['actions'] = array(
@@ -208,6 +217,21 @@ function render_form_mod_form_submit($form, &$form_state) {
       '@fuel' => $fuel_type,
       '@description' => $description)
   );
+
+  $c = $values['render_form_mod_brand'];
+  variable_set('render_form_mod_brand', $c);
+
+  $c = $values['render_form_mod_bargain'];
+  variable_set('render_form_mod_bargain', $c);
+
+  $c = $values['render_form_mod_country'];
+  variable_set('render_form_mod_country', $c);
+
+  $c = $values['render_form_mod_car_fuel'];
+  variable_set('render_form_mod_car_fuel', $c);
+
+  $c = $values['render_form_mod_car_description'];
+  variable_set('render_form_mod_car_description', $c);
 
   drupal_set_message($message, $message_type);
 }
