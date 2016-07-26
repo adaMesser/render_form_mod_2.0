@@ -13,7 +13,7 @@ function render_form_mod_theme($existing, $type, $theme, $path) {
   $items = array();
 
   $items['rend_content'] = array(
-    'render element' => 'form',
+    'render element' => 'fieldset',
     'path' => drupal_get_path('module', 'render_form_mod') . '/templates',
     'template' => 'render-form-mod-content',
   );
@@ -57,8 +57,13 @@ function render_form_mod_block_view($delta = '') {
  * @param $variables
  */
 function render_form_mod_preprocess_rend_content(&$variables) {
-  $variables['form']['render_form_mod_car_fuel']['#weight'] = 10;
-  $variables['form']['render_form_mod_brand']['#weight'] = 11;
+  if (!empty($variables['form']['render_form_mod_car_fuel'])) {
+    $variables['form']['render_form_mod_car_fuel']['#weight'] = 10;
+  }
+
+  if (!empty($variables['form']['render_form_mod_brand'])) {
+    $variables['form']['render_form_mod_brand']['#weight'] = 11;
+  }
 }
 
 /**
@@ -111,6 +116,23 @@ function render_form_mod_form($node, &$form_state) {
     ),
     '#weight' => 1,
     '#required' => TRUE,
+  );
+
+  $form['carinfo']['render_form_mod_date'] = array(
+    '#title' => t('Date'),
+    '#type' => 'textfield',
+    '#description' => t('Enter today\'s date'),
+    '#default_value' => '25.07.2016',
+    '#maxlength' => 255,
+    '#size' => 16,
+    '#attributes' => array(
+      'placeholder' => t('25.07.2016'),
+      'class' => array(
+        'date-class',
+      ),
+    ),
+    '#element_validate' => array('render_form_mod_form_date_validate'),
+    '#weight' => 9,
   );
 
   $form['carinfo']['render_form_mod_bargain'] = array(
@@ -192,8 +214,23 @@ function render_form_mod_form($node, &$form_state) {
 
   $form['actions']['render_form_mod_car_submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Send'),
+    '#value' => t('Show with validation'),
+    '#submit' => array(
+      'render_form_mod_form_submit',
+    ),
   );
+
+  $form['actions']['render_form_mod_car_submit_another'] = array(
+    '#type' => 'submit',
+    '#value' => t('Show without validation'),
+    '#submit' => array(
+      'render_form_mod_form_submit',
+    ),
+
+    '#limit_validation_errors' => array(),
+  );
+
+  $form['#submit'][] = 'render_form_mod_form_submit_another';
 
   return $form;
 }
@@ -203,19 +240,21 @@ function render_form_mod_form($node, &$form_state) {
  * @param $form_state
  */
 function render_form_mod_form_submit($form, &$form_state) {
-  $values = $form_state['values']['carinfo'];
+  $values = $form_state['input']['carinfo'];
 
-  $is_bargain_possible = $values['render_form_mod_bargain'] ? ": it is possible to bargain. " : ": it isn't possible to bargain";
-  $message_type = $values['render_form_mod_bargain'] ? 'status' : 'warning';
+  $is_bargain_possible = $values['render_form_mod_bargain'] ? ": it is possible to bargain. " : ": it isn't possible to bargain. ";
+  $message_type = 'status';
   $from_country = ' from ' . $values['render_form_mod_country'];
   $fuel_type = ' with the ' . $values['render_form_mod_car_fuel'] . ' fuel type';
   $description = $values['render_form_mod_car_description'];
-  $message = t('@name @country @fuel @is_bargain_possible @description', array(
+  $date = 'Today is the ' . $values['render_form_mod_date'] . '.';
+  $message = t('@name @country @fuel @is_bargain_possible @description @date', array(
       '@name' => $values['render_form_mod_brand'],
       '@is_bargain_possible' => $is_bargain_possible,
       '@country' => $from_country,
       '@fuel' => $fuel_type,
-      '@description' => $description)
+      '@description' => $description,
+      '@date' => $date)
   );
 
   $c = $values['render_form_mod_brand'];
@@ -227,6 +266,9 @@ function render_form_mod_form_submit($form, &$form_state) {
   $c = $values['render_form_mod_country'];
   variable_set('render_form_mod_country', $c);
 
+  $c = $values['render_form_mod_date'];
+  variable_set('render_form_mod_date', $c);
+
   $c = $values['render_form_mod_car_fuel'];
   variable_set('render_form_mod_car_fuel', $c);
 
@@ -234,4 +276,51 @@ function render_form_mod_form_submit($form, &$form_state) {
   variable_set('render_form_mod_car_description', $c);
 
   drupal_set_message($message, $message_type);
+}
+
+function render_form_mod_form_submit_another($form, &$form_state) {
+  $values = $form_state['input']['carinfo'];
+
+  $name = 'This is a ' . $values['render_form_mod_brand'] . '!!!';
+  $message_type = 'status';
+  $message = t('@name', array(
+      '@name' => $name)
+  );
+
+  $c = $values['render_form_mod_brand'];
+  variable_set('render_form_mod_brand', $c);
+
+  drupal_set_message($message, $message_type);
+}
+
+function render_form_mod_form_validate($form, &$form_state) {
+  $values = $form_state['values']['carinfo'];
+
+  if (!preg_match('/^[a-z\s]+$/i',$values['render_form_mod_brand'])) {
+    form_set_error(
+      'render_form_mod_brand',
+      t('The name of brand contains invalid characters')
+    );
+  }
+}
+
+function render_form_mod_form_date_validate($form, &$form_state) {
+  $values = $form_state['values']['carinfo'];
+
+  if (!preg_match('/^[0-9]{2}.?[0-9]{2}.?[0-9]{4}$/',$values['render_form_mod_date'])) {
+    form_set_error(
+      'render_form_mod_date',
+      t('The date format is invalid')
+    );
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function render_form_mod_form_alter(&$form, &$form_state, $form_id) {
+  if (!empty($form['actions']['render_form_mod_car_submit_another']['#submit'])) {
+    //$form['actions']['render_form_mod_car_submit_another']['#submit'] = array_merge($form['actions']['render_form_mod_car_submit_another']['#submit'], $form['#submit']);
+    $form['actions']['render_form_mod_car_submit_another']['#submit'][] = $form['#submit'][0];
+  }
 }
